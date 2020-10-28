@@ -9,7 +9,19 @@ route.get("/", async (req, res) => {
   let users = await User.find();
 
   res.send(
-    users.map((user) => _.pick(user, ["fullName", "isTeacher", "userName"]))
+    users.map((user) =>
+      _.pick(user, ["fullName", "isTeacher", "email", "userName"])
+    )
+  );
+});
+
+route.get("/verified", async (req, res) => {
+  let users = await User.find({ verified: false });
+
+  res.send(
+    users.map((user) =>
+      _.pick(user, ["fullName", "isTeacher", "email", "phoneNumber"])
+    )
   );
 });
 
@@ -37,6 +49,18 @@ route.post("/", async (req, res) => {
   res.send(await user.save());
 });
 
+route.put("/verified", async (req, res) => {
+  const { err } = await User.updateOne(
+    { email: req.body.email },
+    {
+      $set: { verified: true },
+    }
+  );
+  if (err) {
+    return res.send(err);
+  }
+  return res.send(`User ${req.body.fullName} is verified.`);
+});
 route.put("/", auth, async (req, res) => {
   const userID = await User.findOne({ userName: req.user.userName });
   const updated = await User.findByIdAndUpdate(
