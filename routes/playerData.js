@@ -1,7 +1,7 @@
 const route = require("express-promise-router")();
 const _ = require("lodash");
 const { User } = require("../db/models/user");
-const PlayerData = require("../db/models/playerdata");
+const PlayerData = require("../db/models/playerData");
 
 route.get("/:username", async (req, res) => {
   const user = await User.findOne({ userName: req.params.username });

@@ -4,6 +4,7 @@ const { boolean } = require("joi");
 const jwt = require("jsonwebtoken");
 const _ = require("lodash");
 const config = require("config");
+const PlayerData = require("../models/playerData");
 
 const validate = function (user) {
   const schema = Joi.object({
@@ -122,6 +123,7 @@ const validate = function (user) {
         return errors;
       }),
     isTeacher: Joi.bool().optional(),
+    verified: Joi.bool().optional(),
   }).with("password", "repeatPassword");
 
   return schema.validate(user, { abortEarly: false });
@@ -166,6 +168,20 @@ userSchema.methods.generateAuthToken = function () {
   );
 };
 
+userSchema.methods.getSavedState = async function () {
+  let savedData = await PlayerData.findOne({ user: this._id });
+  if (!savedData) {
+    savedData = await this.initializeSavedState();
+  }
+  return _.pick(savedData, ["savedState", "currentCharacterSprite"]);
+};
+
+userSchema.methods.initializeSavedState = async function () {
+  const data = await PlayerData.create({
+    user: this._id,
+  });
+  return _.pick(data, ["savedState", "currentCharacterSprite"]);
+};
 const User = mongoose.model("User", userSchema);
 
 module.exports = { User, validate };

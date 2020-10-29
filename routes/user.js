@@ -31,7 +31,8 @@ route.post("/", async (req, res) => {
 
   //check if username already exists in database
   let user = await User.findOne({ userName: req.body.userName });
-  if (user) return res.status(400).send("Username already exists.");
+  if (user)
+    return res.status(400).send({ userName: "Username already exists." });
 
   const salt = await bcrypt.genSalt(10);
   req.body.hashedPassword = await bcrypt.hash(req.body.password, salt);
@@ -46,7 +47,20 @@ route.post("/", async (req, res) => {
       "isAdmin",
     ])
   );
-  res.send(await user.save());
+  user = await user.save();
+  await user.initializeSavedState();
+  const savedState = await user.getSavedState();
+  const { level, world } = savedState.savedState;
+  const token = user.generateAuthToken();
+  const data = {
+    username: user.userName,
+    level,
+    world,
+    token,
+    sprite: savedState.currentCharacterSprite,
+  };
+  res.header("x-token", token);
+  return res.header("access-control-expose-headers", "x-token").send(data);
 });
 
 route.put("/verified", async (req, res) => {
@@ -61,6 +75,7 @@ route.put("/verified", async (req, res) => {
   }
   return res.send(`User ${req.body.fullName} is verified.`);
 });
+
 route.put("/", auth, async (req, res) => {
   const userID = await User.findOne({ userName: req.user.userName });
   const updated = await User.findByIdAndUpdate(

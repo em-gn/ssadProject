@@ -9,20 +9,21 @@ const playerdataSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
-    lastLevelPlayed: {
-      level: {
+    savedState: {
+      world: {
         type: Number,
         required: true,
+        default: 1,
       },
-      checkpoint: {
+      level: {
         type: Number,
         default: 1,
       },
     },
     currentCharacterSprite: {
-      type: Number,
-      default: 1,
-    }, //not sure what you need
+      type: String,
+      default: "WarriorType1",
+    },
   },
   { strict: false }
 );
