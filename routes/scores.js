@@ -1,111 +1,58 @@
 const route = require("express-promise-router")();
 const mongoose = require("mongoose");
 const _ = require("lodash");
-const Score = require("../db/models/score");
+const Group = require("../db/models/group");
 const { User } = require("../db/models/user");
+const Leaderboard = require("../db/models/leaderboard");
+
+route.get("/:groupID", async (req, res) => {
+  const groupID = Integer.parseInt(req.params.groupID);
+  let group = await Group.find({ groupID });
+  return res.send(group.students);
+});
 
 route.get("/", async (req, res) => {
-  let scores = await Score.find().populate("user", "userName -_id");
-  res.send(scores);
+  let groups = await Group.find().populate("students.student");
+  let allStudents = [];
+  groups.forEach((group) => {
+    allStudents = allStudents.concat(group.students);
+  });
+
+  return res.send(allStudents);
 });
 
-route.get("/:level/:username", async (req, res) => {
-  const { username, level } = req.params;
-  let user = await User.findOne({ userName: username });
-  if (!user) {
-    return res.status(404).send("User does not exist.");
+route.post("/:username", async (req, res) => {
+  //this is for both update & putting new
+  const { score, level, world, time } = req.body;
+  let leaderboard = await Leaderboard.findOne({ worldID: world });
+  if (!leaderboard) {
+    leaderboard = await Leaderboard.create({ worldID: world, scores: [] });
   }
-
-  if (level == "all") {
-    let scores = await Score.find({ user: user._id });
-    return res.send(
-      scores.map((score) => {
-        const date = new Date(score._id.getTimestamp());
-        newScore = {
-          userName: username,
-          date,
-          level: score.level,
-          score: score.score,
-        };
-        return newScore;
-      })
-    );
-  }
-
-  let scores = await Score.find({ level, user: user._id });
-  return res.send(
-    scores.map((sc) => {
-      const formattedScore = {
-        user: user.userName,
-        time: new Date(sc._id.getTimestamp()),
-        score: sc.score,
-        level: sc.level,
-      };
-      return formattedScore;
-    })
-  );
-});
-
-route.get("/:level", async (req, res) => {
-  try {
-    const scores = await Score.find({ level: req.params.level }).populate(
-      "user",
-      "userName -_id"
-    );
-
-    return res.send(
-      scores.map((sc) => {
-        const formattedScore = {
-          user: sc.user.userName,
-          time: new Date(sc._id.getTimestamp()),
-          score: sc.score,
-          level: sc.level,
-        };
-        return formattedScore;
-      })
-    );
-  } catch (err) {
-    return res.send(err.message);
-  }
-});
-
-route.post("/", async (req, res) => {
-  let { userName, newScore, level } = req.body;
-  if (!level) {
-    return res.status(404).send("Please input your level.");
-  }
-
-  let user = await User.findOne({ userName });
-  if (!user) {
-    return res.status(404).send("User does not exist.");
-  }
-
-  if (newScore === undefined) {
-    return res.status(404).send("Bad request.");
-  }
-
-  score = await Score.create({ user: user._id, score: newScore, level });
-  return res.send(score);
-});
-
-route.put("/:username", async (req, res) => {
-  let user = User.findOne({ userName: req.params.username });
-
-  let updatedScore = await Score.findByIdAndUpdate(
-    { user: user._id },
-    {
-      $set: req.body,
+  const { username } = req.params;
+  let totalScore = 0 + score;
+  student.score.forEach((s) => {
+    if (s.worldID === world) {
+      totalScore += s.levels.reduce((acc, val) => (acc += val), 0);
     }
-  );
-  return res.send(updatedScore);
+  });
+  const student = await User.findOne({ userName: username });
+
+  leaderboard.scores.set(leaderboard.scores.length - 1, {
+    username: student.userName,
+    score: totalScore,
+  });
+
+  await student.setScore(world, level, score, time);
+  await leaderboard.save();
+  return res.send(student);
 });
 
-route.delete("/", async (req, res) => {
-  //you need to retrieve the ObjectId of the score document first..
-  const deletedScore = await Score.findByIdAndDelete(
-    mongoose.Types.ObjectId(req.body._id)
-  );
-  return res.send(deletedScore);
+route.get("/:worldID/leaderboard", async (req, res) => {
+  const { worldID } = req.params;
+  const leaderboard = await Leaderboard.findOne({ worldID });
+  leaderboard.scores.sort((a, b) => {
+    return b.score - a.score;
+  });
+  return res.send(leaderboard.scores.slice(0, 10));
 });
-
 module.exports = route;

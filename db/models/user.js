@@ -159,7 +159,40 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  score: [
+    {
+      _id: false,
+      levels: [Number],
+      worldID: Number,
+      time: [Number],
+    },
+  ],
+  group: { type: Number, default: -1 },
 });
+
+userSchema.methods.setScore = async function (world, level, score, time) {
+  let pointer = null;
+  for (let i = 0; i < this.score.length; i++) {
+    if (this.score[i].worldID === world) {
+      pointer = i;
+    }
+  }
+
+  if (this.score === null) this.score = [];
+  if (pointer === null) {
+    this.score.push({
+      worldID: world,
+      levels: [],
+      time: [],
+    });
+    this.score[this.score.length - 1].levels[level - 1] = score;
+    this.score[this.score.length - 1].time[level - 1] = time;
+  } else {
+    this.score[pointer].levels.set(level - 1, score);
+    this.score[pointer].time.set(level - 1, time);
+  }
+  await this.save();
+};
 
 userSchema.methods.generateAuthToken = function () {
   return jwt.sign(
@@ -182,6 +215,14 @@ userSchema.methods.initializeSavedState = async function () {
   });
   return _.pick(data, ["savedState", "currentCharacterSprite"]);
 };
+
+userSchema.methods.isCompleted = function () {
+  if (!this.score) return false;
+  else if (this.score.length < 3) return false;
+  else if (this.score[2].length < 3) return false;
+  else return true;
+};
+
 const User = mongoose.model("User", userSchema);
 
 module.exports = { User, validate };

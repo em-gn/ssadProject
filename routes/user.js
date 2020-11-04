@@ -16,7 +16,7 @@ route.get("/", async (req, res) => {
 });
 
 route.get("/verified", async (req, res) => {
-  let users = await User.find({ verified: false });
+  let users = await User.find({ verified: false, isTeacher: true });
 
   res.send(
     users.map((user) =>
@@ -111,6 +111,11 @@ route.get("/me", auth, async (req, res) => {
   const user = await User.findOne({ userName });
   if (!user) return res.status(400).send("No such user!");
   res.send(user);
+});
+
+route.get("/teachers", async (req, res) => {
+  const teachers = await User.find({ isTeacher: true });
+  return res.send(teachers);
 });
 
 module.exports = route;

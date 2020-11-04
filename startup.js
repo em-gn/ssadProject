@@ -11,7 +11,7 @@ const logins = require("./routes/login");
 const scores = require("./routes/scores");
 const playerdata = require("./routes/playerData");
 const question = require("./routes/questions");
-
+const groups = require("./routes/group");
 module.exports = function (app) {
   app.listen(port, () => {
     console.log(`Listening on port ${port}...`);
@@ -24,5 +24,6 @@ module.exports = function (app) {
   app.use("/api/scores", scores);
   app.use("/api/playerdata", playerdata);
   app.use("/api/questions", question);
+  app.use("/api/groups", groups);
   app.use(error);
 };
