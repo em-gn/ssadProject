@@ -4,6 +4,7 @@ const _ = require("lodash");
 const Group = require("../db/models/group");
 const { User } = require("../db/models/user");
 const Leaderboard = require("../db/models/leaderboard");
+const PlayerData = require("../db/models/playerData");
 
 route.get("/:groupID", async (req, res) => {
   const groupID = Integer.parseInt(req.params.groupID);
@@ -28,14 +29,27 @@ route.post("/:username", async (req, res) => {
   if (!leaderboard) {
     leaderboard = await Leaderboard.create({ worldID: world, scores: [] });
   }
+
   const { username } = req.params;
+  const student = await User.findOne({ userName: username });
   let totalScore = 0 + score;
   student.score.forEach((s) => {
     if (s.worldID === world) {
       totalScore += s.levels.reduce((acc, val) => (acc += val), 0);
     }
   });
-  const student = await User.findOne({ userName: username });
+  const playerdata = await PlayerData.findOne({ user: student._id });
+  if (world == playerdata.savedState.world) {
+    if (level >= playerdata.savedState.level) {
+      playerdata.savedState.world = world;
+      playerdata.savedState.level = level;
+      await playerdata.save();
+    }
+  } else if (world > playerdata.savedState.world) {
+    playerdata.savedState.world = world;
+    playerdata.savedState.level = level;
+    await playerdata.save();
+  }
 
   leaderboard.scores.set(leaderboard.scores.length - 1, {
     username: student.userName,

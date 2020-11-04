@@ -18,10 +18,13 @@ const names = [
   "Chillwell",
   "Aubameyang",
 ];
-mongoose.connect("mongodb://localhost/ssadProject", {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+mongoose.connect(
+  "mongodb+srv://fazirul001:rWvpw73EvrPjnr6@ssadproject.58svf.mongodb.net/development?retryWrites=true&w=majority",
+  {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  }
+);
 
 mongoose.set("useCreateIndex", true);
 const db = mongoose.connection;
