@@ -40,7 +40,7 @@ groupSchema.methods.getBoxPlotStats = async function () {
     "students.student",
     "score"
   );
-  console.log(group);
+  // console.log(group);
   const stats = {};
   group.students.forEach((student) => {
     student.student.score.forEach((world) => {
@@ -113,6 +113,9 @@ groupSchema.methods.getAverageMinutes = async function () {
     "students.student",
     "score"
   );
+  group.students.forEach((s) => {
+    console.log(s.student.score);
+  });
   let totalTime = 0;
   if (!group.students) return 0;
 
@@ -123,8 +126,25 @@ groupSchema.methods.getAverageMinutes = async function () {
       });
     }
   });
-  return Math.floor(totalTime / this.getNumStudents());
+  return (totalTime / this.getNumStudents() / 60.0).toPrecision(3);
 };
 
+groupSchema.methods.getScoreByWorld = async function () {
+  const worldArr = [0, 0, 0, 0, 0];
+  const group = await Group.findOne({ groupID: this.groupID }).populate(
+    "students.student",
+    "score"
+  );
+  if (!group.students) return worldArr;
+
+  group.students.forEach((student) => {
+    if (student.student) {
+      student.student.score.forEach((score, index) => {
+        worldArr[index] += score.levels.reduce((acc, val) => (acc += val), 0);
+      });
+    }
+  });
+  return { [this.getNumStudents()]: worldArr };
+};
 const Group = mongoose.model("Group", groupSchema);
 module.exports = Group;

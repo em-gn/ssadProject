@@ -25,6 +25,7 @@ route.get("/", async (req, res) => {
 route.post("/:username", async (req, res) => {
   //this is for both update & putting new
   const { score, level, world, time } = req.body;
+
   let leaderboard = await Leaderboard.findOne({ worldID: world });
   if (!leaderboard) {
     leaderboard = await Leaderboard.create({ worldID: world, scores: [] });

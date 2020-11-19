@@ -43,7 +43,7 @@ route.post("/:groupID/addStudent", async (req, res) => {
     await student.save();
   }
 
-  console.log(toPush);
+  // console.log(toPush);
   const group = await Group.updateOne(
     { groupID },
     {
@@ -106,6 +106,8 @@ route.post("/:groupID/statistics", async (req, res) => {
       return res.send((await group.getAverageScore()).toString());
     case "getCompletionRate":
       return res.send(group.getCompletionRate());
+    case "getScoreByWorld":
+      return res.send(await group.getScoreByWorld());
     default:
       return res.send("No such type");
   }
